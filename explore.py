@@ -19,7 +19,7 @@ X = [np.array(x.loc[:,'ds']) for x in df]
 arrays = [np.array(x.loc[:,'y']) for x in df]
 
 fig, axs = plt.subplots(len(DATA),1,sharex=True)
-#Remove horisontal space between axes
+#decrease horisontal space between axes
 fig.subplots_adjust(hspace=.5)
 fig.suptitle(DATE)
 # Plot each graph
