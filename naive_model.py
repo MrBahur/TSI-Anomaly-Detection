@@ -51,3 +51,4 @@ for i in range(0, len(DATA)):
         label.set_horizontalalignment('right')
 
 plt.show()
+
