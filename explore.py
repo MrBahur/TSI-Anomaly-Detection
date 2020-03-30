@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
+import os
 
-PATH = 'data\\Kobi_Bryant_26_1-29_1\\AM'  # path to the relevant data for explore
-
+#PATH = 'data\\Kobi_Bryant_26_1-29_1\\AM'  # path to the relevant data for explore
+PATH = "\\Users\\gali.k\\IdeaProjects\\Taboola-Starship-Internship\\data\\Kobi_Bryant_26_1-29_1\\AM"
 DATA = ('recommendation_requests_5m_rate_dc',
         'total_failed_action_conversions',
         'total_success_action_conversions',
@@ -19,7 +20,7 @@ data_types = {'ds': str, 'y': float}
 parse_dates = ['ds']
 # read data from csv file
 # TODO(1): change 'date_parser' to parse into timestamp
-dfs = [pd.read_csv(PATH + '\\' + DATA[i] + '\\' + FILE_NAMES[i], dtype=data_types, parse_dates=parse_dates,
+dfs = [pd.read_csv(PATH + os.pathsep + DATA[i] + os.pathsep + FILE_NAMES[i], dtype=data_types, parse_dates=parse_dates,
                    date_parser=pd.to_datetime) for i in range(0, len(DATA))]
 Xs = [np.array(df.loc[:, 'ds']) for df in dfs]
 arrays = [np.array(df.loc[:, 'y']) for df in dfs]
