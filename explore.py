@@ -20,8 +20,7 @@ parse_dates = ['ds']
 # read data from csv file
 # TODO(1): change 'date_parser' to parse into timestamp
 dfs = [pd.read_csv(PATH + '\\' + DATA[i] + '\\' + FILE_NAMES[i], dtype=data_types, parse_dates=parse_dates,
-                   date_parser=pd.to_datetime) for i in
-       range(0, len(DATA))]
+                   date_parser=pd.to_datetime) for i in range(0, len(DATA))]
 Xs = [np.array(df.loc[:, 'ds']) for df in dfs]
 arrays = [np.array(df.loc[:, 'y']) for df in dfs]
 
