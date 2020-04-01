@@ -125,13 +125,16 @@ class MyModel:
         plt.legend([Predict, Test], ["Predicted Data", "Real Data"])
         plt.show()
 
+def main():
+    m = MyModel()
+    m.fetch_data('data\\HK_anomaly_17_3\\HK')
+    m.present_raw_data()
+    m.prep_data()
+    m.split_train_test()
+    m.build_model()
+    m.test_model()
 
-m = MyModel()
-m.fetch_data('data\\HK_anomaly_17_3\\HK')
-m.present_raw_data()
-m.prep_data()
-m.split_train_test()
-m.build_model()
-m.test_model()
+if(__name__ == "__main__"):
+    main()
 
-#TODO add main and ArgumentParser
+#TODO add ArgumentParser
