@@ -12,19 +12,21 @@ from sklearn.model_selection import train_test_split
 
 import glob
 
+import argparse
+
 
 class Reader:
-    #path is the path to the Main dataset folder
+    # path is the path to the Main dataset folder
     def __init__(self, path):
         self.path = path
 
-    #set the path again if you want to use the same reader to read another dataset
+    # set the path again if you want to use the same reader to read another dataset
     def set_path(self, path):
         self.path = path
 
     # read all the csv file in self.path
     # return Data Frame containing all of the data
-    #TODO add read from date to date (in a range) another method
+    # TODO add read from date to date (in a range) another method
     def read(self):
         all_filenames = glob.glob(self.path + "/*.csv")
         data_types = {'ds': str, 'y': float}
@@ -40,7 +42,7 @@ class Reader:
 
 class MyModel:
 
-    #TODO get DATA as parameter and index for "target" data
+    # TODO get DATA as parameter and index for "target" data
     # where target is the data you want to predict
     def __init__(self):
         self.DATA = ('total_success_action_conversions',
@@ -51,7 +53,7 @@ class MyModel:
 
     # fetching the data from path,
     # where path is the main folder containing the data.
-    #TODO make an array in Size of DATA-1 instead of N variables (generlize)
+    # TODO make an array in Size of DATA-1 instead of N variables (generlize)
     def fetch_data(self, path):
         reader = Reader(path=path + '//' + self.DATA[0])
         self.target = np.array([reader.read().loc[:, 'y']])
@@ -65,7 +67,7 @@ class MyModel:
         self.feature4 = np.array([reader.read().loc[:, 'y']])
 
     # showing the raw data without interpretation
-    #TODO generlize
+    # TODO generlize
     def present_raw_data(self):
         plt.figure(1)
         T, = plt.plot(self.target[0, :])
@@ -77,7 +79,7 @@ class MyModel:
         plt.show(block=False)
 
     # preparing the data (Min max normalization and shape of the data)
-    #TODO split to normalization and reshaping
+    # TODO split to normalization and reshaping
     def prep_data(self):
         self.X = np.concatenate([self.feature1, self.feature2, self.feature3, self.feature4])
         self.X = np.transpose(self.X)
@@ -125,16 +127,20 @@ class MyModel:
         plt.legend([Predict, Test], ["Predicted Data", "Real Data"])
         plt.show()
 
-def main():
+
+def main(args=None):
     m = MyModel()
-    m.fetch_data('data\\HK_anomaly_17_3\\HK')
+    m.fetch_data(args.path)
     m.present_raw_data()
     m.prep_data()
     m.split_train_test()
     m.build_model()
     m.test_model()
 
-if(__name__ == "__main__"):
-    main()
 
-#TODO add ArgumentParser
+if (__name__ == "__main__"):
+    parser = argparse.ArgumentParser(description='This is an LSTM model to detect anomalies in data for Taboola')
+    parser.add_argument('-path', action='store', dest='path')
+    args = parser.parse_args()
+    print(args.path)
+    main(args)
