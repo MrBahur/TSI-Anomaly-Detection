@@ -10,19 +10,21 @@ from keras import metrics
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 
-import datetime
 import glob
 
 
 class Reader:
+    #path is the path to the Main dataset folder
     def __init__(self, path):
         self.path = path
 
+    #set the path again if you want to use the same reader to read another dataset
     def set_path(self, path):
         self.path = path
 
     # read all the csv file in self.path
     # return Data Frame containing all of the data
+    #TODO add read from date to date (in a range) another method
     def read(self):
         all_filenames = glob.glob(self.path + "/*.csv")
         data_types = {'ds': str, 'y': float}
@@ -38,6 +40,8 @@ class Reader:
 
 class MyModel:
 
+    #TODO get DATA as parameter and index for "target" data
+    # where target is the data you want to predict
     def __init__(self):
         self.DATA = ('total_success_action_conversions',
                      'recommendation_requests_5m_rate_dc',
@@ -47,6 +51,7 @@ class MyModel:
 
     # fetching the data from path,
     # where path is the main folder containing the data.
+    #TODO make an array in Size of DATA-1 instead of N variables (generlize)
     def fetch_data(self, path):
         reader = Reader(path=path + '//' + self.DATA[0])
         self.target = np.array([reader.read().loc[:, 'y']])
@@ -60,6 +65,7 @@ class MyModel:
         self.feature4 = np.array([reader.read().loc[:, 'y']])
 
     # showing the raw data without interpretation
+    #TODO generlize
     def present_raw_data(self):
         plt.figure(1)
         T, = plt.plot(self.target[0, :])
@@ -70,6 +76,8 @@ class MyModel:
         plt.legend([T, F1, F2, F3, F4], (self.DATA))
         plt.show(block=False)
 
+    # preparing the data (Min max normalization and shape of the data)
+    #TODO split to normalization and reshaping
     def prep_data(self):
         self.X = np.concatenate([self.feature1, self.feature2, self.feature3, self.feature4])
         self.X = np.transpose(self.X)
@@ -86,20 +94,25 @@ class MyModel:
         scaler1.fit(self.Y)
         self.Y = scaler1.transform(self.Y)
 
+    # split the data to train and test (as a batch)
     def split_train_test(self):
-        l = train_test_split(self.X, self.Y, test_size=0.2)
+        l = train_test_split(self.X, self.Y, test_size=0.3)
         self.X_train = l[0]
         self.X_test = l[1]
         self.Y_train = l[2]
         self.Y_test = l[3]
 
+    # building and fitting the model
+    # TODO split to build function with parameters and train methods with parameters
     def build_model(self):
         self.model = Sequential()
         self.model.add(LSTM(100, activation='tanh', input_shape=(1, 4), recurrent_activation='hard_sigmoid'))
         self.model.add(Dense(1))
         self.model.compile(loss='mse', optimizer='rmsprop', metrics=[metrics.mae])
-        self.model.fit(self.X_train, self.Y_train, epochs=100, verbose=2)
+        self.model.fit(self.X_train, self.Y_train, epochs=27, verbose=2)
 
+    # testing the model
+    # TODO split to build the prediction and present (different methods)
     def test_model(self):
         self.Predict = self.model.predict(self.X_test)
         plt.figure(2)
@@ -112,6 +125,7 @@ class MyModel:
         plt.legend([Predict, Test], ["Predicted Data", "Real Data"])
         plt.show()
 
+
 m = MyModel()
 m.fetch_data('data\\HK_anomaly_17_3\\HK')
 m.present_raw_data()
@@ -119,3 +133,5 @@ m.prep_data()
 m.split_train_test()
 m.build_model()
 m.test_model()
+
+#TODO add main and ArgumentParser
