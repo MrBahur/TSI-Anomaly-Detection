@@ -51,5 +51,21 @@ class MyModel:
         reader.set_path(path=path + '//' + self.DATA[4])
         self.feature4 = reader.read()
 
-    #showing the raw data without interpretation
-    #def present_data(self):
+    # showing the raw data without interpretation
+    def present_raw_data(self):
+        Target = np.array([self.target.loc[:, 'y']])
+        Feature1 = np.array([self.feature1.loc[:, 'y']])
+        Feature2 = np.array([self.feature2.loc[:, 'y']])
+        Feature3 = np.array([self.feature3.loc[:, 'y']])
+        Feature4 = np.array([self.feature4.loc[:, 'y']])
+
+        plt.figure(1)
+        T, = plt.plot(Target[0, :])
+        F1, = plt.plot(Feature1[0, :])
+        F2, = plt.plot(Feature2[0, :])
+        F3, = plt.plot(Feature3[0, :])
+        F4, = plt.plot(Feature4[0, :])
+        plt.legend([T,F1,F2,F3,F4],(self.DATA))
+        plt.show()
+
+
