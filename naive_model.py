@@ -26,7 +26,6 @@ Xs = [[] for i in range(0,len(DATA))]
 for j in range(1,25):
 	DATE = datetime.datetime(2020, 1, j).strftime("%Y-%m-%d") 
 	FILE_NAMES = [x + '_' + DATE + '.csv' for x in DATA]
-	headers = ['ds', 'y']
 	data_types = {'ds': str, 'y': float}
 	parse_dates = ['ds']
 	dfs = [pd.read_csv(PATH + '\\' + DATA[i] + '\\' + FILE_NAMES[i], dtype=data_types, parse_dates=parse_dates,

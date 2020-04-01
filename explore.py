@@ -3,14 +3,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
 
-PATH = 'data\\Kobi_Bryant_26_1-29_1\\AM'  # path to the relevant data for explore
+PATH = 'data\\HK_anomaly_16_2\\HK'  # path to the relevant data for explore
 
 DATA = ('recommendation_requests_5m_rate_dc',
         'total_failed_action_conversions',
         'total_success_action_conversions',
         'trc_requests_timer_p95_weighted_dc',
         'trc_requests_timer_p99_weighted_dc')
-base = datetime.datetime(2020, 1, 25)  # set the date you want to explore year, day, month
+base = datetime.datetime(2020, 2, 16)  # set the date you want to explore year, day, month
 DATE = base.strftime("%Y-%m-%d")
 
 FILE_NAMES = [x + '_' + DATE + '.csv' for x in DATA]
