@@ -41,30 +41,25 @@ class MyModel:
     # where path is the main folder containing the data.
     def fetch_data(self, path):
         reader = Reader(path=path + '//' + self.DATA[0])
-        self.target = reader.read()
+        self.target = np.array([reader.read().loc[:,'y']])
         reader.set_path(path=path + '//' + self.DATA[1])
-        self.feature1 = reader.read()
+        self.feature1 = np.array([reader.read().loc[:,'y']])
         reader.set_path(path=path + '//' + self.DATA[2])
-        self.feature2 = reader.read()
+        self.feature2 = np.array([reader.read().loc[:,'y']])
         reader.set_path(path=path + '//' + self.DATA[3])
-        self.feature3 = reader.read()
+        self.feature3 = np.array([reader.read().loc[:,'y']])
         reader.set_path(path=path + '//' + self.DATA[4])
-        self.feature4 = reader.read()
+        self.feature4 = np.array([reader.read().loc[:,'y']])
 
     # showing the raw data without interpretation
     def present_raw_data(self):
-        Target = np.array([self.target.loc[:, 'y']])
-        Feature1 = np.array([self.feature1.loc[:, 'y']])
-        Feature2 = np.array([self.feature2.loc[:, 'y']])
-        Feature3 = np.array([self.feature3.loc[:, 'y']])
-        Feature4 = np.array([self.feature4.loc[:, 'y']])
 
         plt.figure(1)
-        T, = plt.plot(Target[0, :])
-        F1, = plt.plot(Feature1[0, :])
-        F2, = plt.plot(Feature2[0, :])
-        F3, = plt.plot(Feature3[0, :])
-        F4, = plt.plot(Feature4[0, :])
+        T, = plt.plot(self.target[0, :])
+        F1, = plt.plot(self.feature1[0, :])
+        F2, = plt.plot(self.feature2[0, :])
+        F3, = plt.plot(self.feature3[0, :])
+        F4, = plt.plot(self.feature4[0, :])
         plt.legend([T,F1,F2,F3,F4],(self.DATA))
         plt.show()
 
