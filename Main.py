@@ -2,7 +2,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import LSTM
+from keras import metrics
+
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
 
 import datetime
 import glob
@@ -62,7 +68,7 @@ class MyModel:
         F3, = plt.plot(self.feature3[0, :])
         F4, = plt.plot(self.feature4[0, :])
         plt.legend([T, F1, F2, F3, F4], (self.DATA))
-        plt.show()
+        plt.show(block=False)
 
     def prep_data(self):
         self.X = np.concatenate([self.feature1, self.feature2, self.feature3, self.feature4])
@@ -80,10 +86,36 @@ class MyModel:
         scaler1.fit(self.Y)
         self.Y = scaler1.transform(self.Y)
 
+    def split_train_test(self):
+        l = train_test_split(self.X, self.Y, test_size=0.2)
+        self.X_train = l[0]
+        self.X_test = l[1]
+        self.Y_train = l[2]
+        self.Y_test = l[3]
 
+    def build_model(self):
+        self.model = Sequential()
+        self.model.add(LSTM(100, activation='tanh', input_shape=(1, 4), recurrent_activation='hard_sigmoid'))
+        self.model.add(Dense(1))
+        self.model.compile(loss='mse', optimizer='rmsprop', metrics=[metrics.mae])
+        self.model.fit(self.X_train, self.Y_train, epochs=100, verbose=2)
 
-# m = MyModel()
-# m.fetch_data('data\\HK_anomaly_17_3\\HK')
-# m.present_raw_data()
-# m.prep_data()
-# print(m.X.shape)
+    def test_model(self):
+        self.Predict = self.model.predict(self.X_test)
+        plt.figure(2)
+        plt.scatter(self.Predict, self.Y_test)
+        plt.show(block=False)
+
+        plt.figure(3)
+        Test, = plt.plot(self.Y_test)
+        Predict, = plt.plot(self.Predict)
+        plt.legend([Predict, Test], ["Predicted Data", "Real Data"])
+        plt.show()
+
+m = MyModel()
+m.fetch_data('data\\HK_anomaly_17_3\\HK')
+m.present_raw_data()
+m.prep_data()
+m.split_train_test()
+m.build_model()
+m.test_model()
