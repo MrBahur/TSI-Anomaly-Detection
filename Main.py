@@ -2,6 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+from sklearn.preprocessing import MinMaxScaler
+
 import datetime
 import glob
 
@@ -41,26 +43,47 @@ class MyModel:
     # where path is the main folder containing the data.
     def fetch_data(self, path):
         reader = Reader(path=path + '//' + self.DATA[0])
-        self.target = np.array([reader.read().loc[:,'y']])
+        self.target = np.array([reader.read().loc[:, 'y']])
         reader.set_path(path=path + '//' + self.DATA[1])
-        self.feature1 = np.array([reader.read().loc[:,'y']])
+        self.feature1 = np.array([reader.read().loc[:, 'y']])
         reader.set_path(path=path + '//' + self.DATA[2])
-        self.feature2 = np.array([reader.read().loc[:,'y']])
+        self.feature2 = np.array([reader.read().loc[:, 'y']])
         reader.set_path(path=path + '//' + self.DATA[3])
-        self.feature3 = np.array([reader.read().loc[:,'y']])
+        self.feature3 = np.array([reader.read().loc[:, 'y']])
         reader.set_path(path=path + '//' + self.DATA[4])
-        self.feature4 = np.array([reader.read().loc[:,'y']])
+        self.feature4 = np.array([reader.read().loc[:, 'y']])
 
     # showing the raw data without interpretation
     def present_raw_data(self):
-
         plt.figure(1)
         T, = plt.plot(self.target[0, :])
         F1, = plt.plot(self.feature1[0, :])
         F2, = plt.plot(self.feature2[0, :])
         F3, = plt.plot(self.feature3[0, :])
         F4, = plt.plot(self.feature4[0, :])
-        plt.legend([T,F1,F2,F3,F4],(self.DATA))
+        plt.legend([T, F1, F2, F3, F4], (self.DATA))
         plt.show()
 
+    def prep_data(self):
+        self.X = np.concatenate([self.feature1, self.feature2, self.feature3, self.feature4])
+        self.X = np.transpose(self.X)
 
+        self.Y = self.target
+        self.Y = np.transpose(self.Y)
+
+        scaler = MinMaxScaler()
+        scaler.fit(self.X)
+        self.X = scaler.transform(self.X)
+        self.X = np.reshape(self.X, (self.X.shape[0], 1, self.X.shape[1]))
+
+        scaler1 = MinMaxScaler()
+        scaler1.fit(self.Y)
+        self.Y = scaler1.transform(self.Y)
+
+
+
+# m = MyModel()
+# m.fetch_data('data\\HK_anomaly_17_3\\HK')
+# m.present_raw_data()
+# m.prep_data()
+# print(m.X.shape)
