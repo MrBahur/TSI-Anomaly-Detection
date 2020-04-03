@@ -87,18 +87,18 @@ class MyModel:
         self.Y = self.target
         self.Y = np.transpose(self.Y)
 
-        scaler = MinMaxScaler()
+        scaler = MinMaxScaler(feature_range=(0,1))
         scaler.fit(self.X)
         self.X = scaler.transform(self.X)
         self.X = np.reshape(self.X, (self.X.shape[0], 1, self.X.shape[1]))
 
-        scaler1 = MinMaxScaler()
+        scaler1 =  MinMaxScaler(feature_range=(0,1))
         scaler1.fit(self.Y)
         self.Y = scaler1.transform(self.Y)
 
     # split the data to train and test (as a batch)
     def split_train_test(self):
-        l = train_test_split(self.X, self.Y, test_size=0.3)
+        l = train_test_split(self.X, self.Y, test_size=0.2)
         self.X_train = l[0]
         self.X_test = l[1]
         self.Y_train = l[2]
@@ -108,10 +108,10 @@ class MyModel:
     # TODO split to build function with parameters and train methods with parameters
     def build_model(self):
         self.model = Sequential()
-        self.model.add(LSTM(100, activation='tanh', input_shape=(1, 4), recurrent_activation='hard_sigmoid'))
-        self.model.add(Dense(1))
-        self.model.compile(loss='mse', optimizer='rmsprop', metrics=[metrics.mae])
-        self.model.fit(self.X_train, self.Y_train, epochs=27, verbose=2)
+        self.model.add(LSTM(50, activation='tanh', input_shape=(1, 4), recurrent_activation='hard_sigmoid'))
+        self.model.add(Dense(1, activation='sigmoid'))
+        self.model.compile(loss='mse', optimizer='adam', metrics=[metrics.mae])
+        self.model.fit(self.X_train, self.Y_train, epochs=30, verbose=2, )
 
     # testing the model
     # TODO split to build the prediction and present (different methods)
