@@ -74,22 +74,29 @@ class MyModel:
         plt.show(block=False)
 
     # preparing the data (Min max normalization and shape of the data)
-    # TODO split to normalization and reshaping
-    def prep_data(self):
+    def concatenate_data(self):
         self.X = np.concatenate(self.feature)
         self.X = np.transpose(self.X)
 
         self.Y = self.target
         self.Y = np.transpose(self.Y)
 
+    def normalize(self):
         scaler = MinMaxScaler(feature_range=(0, 1))
         scaler.fit(self.X)
         self.X = scaler.transform(self.X)
-        self.X = np.reshape(self.X, (self.X.shape[0], 1, self.X.shape[1]))
 
         scaler1 = MinMaxScaler(feature_range=(0, 1))
         scaler1.fit(self.Y)
         self.Y = scaler1.transform(self.Y)
+
+    def reshape_X(self):
+        self.X = np.reshape(self.X, (self.X.shape[0], 1, self.X.shape[1]))
+
+    def prep_data(self):
+        self.concatenate_data()
+        self.normalize()
+        self.reshape_X()
 
     # split the data to train and test (as a batch)
     def split_train_test(self):
