@@ -109,17 +109,17 @@ class MyModel:
 
     # building and fitting the model
     def build_model(self, Nodes=50, LSTM_activation='tanh', recurrent_activation='hard_sigmoid',
-                    dense_activation='sigmoid', num_of_layers=1):
+                    dense_activation='sigmoid', num_of_layers=1, optimizer='adam'):
         self.model = Sequential()
         for i in range(1, num_of_layers):
             self.model.add(
-                LSTM(Nodes, activation=LSTM_activation, input_shape=(self.X.shape[1],self.X.shape[2]),
+                LSTM(Nodes, activation=LSTM_activation, input_shape=(self.X.shape[1], self.X.shape[2]),
                      recurrent_activation=recurrent_activation, return_sequences=True))
         self.model.add(
-            LSTM(Nodes, activation=LSTM_activation, input_shape=(self.X.shape[1],self.X.shape[2]),
+            LSTM(Nodes, activation=LSTM_activation, input_shape=(self.X.shape[1], self.X.shape[2]),
                  recurrent_activation=recurrent_activation))
         self.model.add(Dense(1, activation=dense_activation))
-        self.model.compile(loss='mse', optimizer='adam', metrics=[metrics.mae])
+        self.model.compile(loss='mse', optimizer=optimizer, metrics=[metrics.mae])
 
     def train_model(self, epochs=30):
         self.model.fit(self.X_train, self.Y_train, epochs=epochs, verbose=2, )
