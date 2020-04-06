@@ -53,68 +53,78 @@ class MyModel:
 
     # fetching the data from path,
     # where path is the main folder containing the data.
-    # TODO make an array in Size of DATA-1 instead of N variables (generlize)
     def fetch_data(self, path):
         reader = Reader(path=path + '//' + self.DATA[0])
         self.target = np.array([reader.read().loc[:, 'y']])
-        reader.set_path(path=path + '//' + self.DATA[1])
-        self.feature1 = np.array([reader.read().loc[:, 'y']])
-        reader.set_path(path=path + '//' + self.DATA[2])
-        self.feature2 = np.array([reader.read().loc[:, 'y']])
-        reader.set_path(path=path + '//' + self.DATA[3])
-        self.feature3 = np.array([reader.read().loc[:, 'y']])
-        reader.set_path(path=path + '//' + self.DATA[4])
-        self.feature4 = np.array([reader.read().loc[:, 'y']])
+        self.feature = []
+        for i in range(1, len(self.DATA)):
+            reader.set_path(path=path + '//' + self.DATA[i])
+            self.feature.append(np.array([reader.read().loc[:, 'y']]))
 
     # showing the raw data without interpretation
-    # TODO generlize
+    # TODO find out how to make it in loop
     def present_raw_data(self):
         plt.figure(1)
         T, = plt.plot(self.target[0, :])
-        F1, = plt.plot(self.feature1[0, :])
-        F2, = plt.plot(self.feature2[0, :])
-        F3, = plt.plot(self.feature3[0, :])
-        F4, = plt.plot(self.feature4[0, :])
+        F1, = plt.plot(self.feature[1 - 1][0, :])
+        F2, = plt.plot(self.feature[2 - 1][0, :])
+        F3, = plt.plot(self.feature[3 - 1][0, :])
+        F4, = plt.plot(self.feature[4 - 1][0, :])
         plt.legend([T, F1, F2, F3, F4], (self.DATA))
         plt.show(block=False)
 
     # preparing the data (Min max normalization and shape of the data)
-    # TODO split to normalization and reshaping
-    def prep_data(self):
-        self.X = np.concatenate([self.feature1, self.feature2, self.feature3, self.feature4])
+    def concatenate_data(self):
+        self.X = np.concatenate(self.feature)
         self.X = np.transpose(self.X)
 
         self.Y = self.target
         self.Y = np.transpose(self.Y)
 
-        scaler = MinMaxScaler()
+    def normalize(self):
+        scaler = MinMaxScaler(feature_range=(0, 1))
         scaler.fit(self.X)
         self.X = scaler.transform(self.X)
-        self.X = np.reshape(self.X, (self.X.shape[0], 1, self.X.shape[1]))
 
-        scaler1 = MinMaxScaler()
+        scaler1 = MinMaxScaler(feature_range=(0, 1))
         scaler1.fit(self.Y)
         self.Y = scaler1.transform(self.Y)
 
+    def reshape_X(self):
+        self.X = np.reshape(self.X, (self.X.shape[0], 1, self.X.shape[1]))
+        print(self.X.shape)
+
+    def prep_data(self):
+        self.concatenate_data()
+        self.normalize()
+        self.reshape_X()
+
     # split the data to train and test (as a batch)
     def split_train_test(self):
-        l = train_test_split(self.X, self.Y, test_size=0.3)
+        l = train_test_split(self.X, self.Y, test_size=0.2)
         self.X_train = l[0]
         self.X_test = l[1]
         self.Y_train = l[2]
         self.Y_test = l[3]
 
     # building and fitting the model
-    # TODO split to build function with parameters and train methods with parameters
-    def build_model(self):
+    def build_model(self, Nodes=50, LSTM_activation='tanh', recurrent_activation='hard_sigmoid',
+                    dense_activation='sigmoid', num_of_layers=1, optimizer='adam'):
         self.model = Sequential()
-        self.model.add(LSTM(100, activation='tanh', input_shape=(1, 4), recurrent_activation='hard_sigmoid'))
-        self.model.add(Dense(1))
-        self.model.compile(loss='mse', optimizer='rmsprop', metrics=[metrics.mae])
-        self.model.fit(self.X_train, self.Y_train, epochs=27, verbose=2)
+        for i in range(1, num_of_layers):
+            self.model.add(
+                LSTM(Nodes, activation=LSTM_activation, input_shape=(self.X.shape[1], self.X.shape[2]),
+                     recurrent_activation=recurrent_activation, return_sequences=True))
+        self.model.add(
+            LSTM(Nodes, activation=LSTM_activation, input_shape=(self.X.shape[1], self.X.shape[2]),
+                 recurrent_activation=recurrent_activation))
+        self.model.add(Dense(1, activation=dense_activation))
+        self.model.compile(loss='mse', optimizer=optimizer, metrics=[metrics.mae])
+
+    def train_model(self, epochs=30):
+        self.model.fit(self.X_train, self.Y_train, epochs=epochs, verbose=2, )
 
     # testing the model
-    # TODO split to build the prediction and present (different methods)
     def test_model(self):
         self.Predict = self.model.predict(self.X_test)
         plt.figure(2)
@@ -135,6 +145,7 @@ def main(args=None):
     m.prep_data()
     m.split_train_test()
     m.build_model()
+    m.train_model()
     m.test_model()
 
 
