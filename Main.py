@@ -92,6 +92,7 @@ class MyModel:
 
     def reshape_X(self):
         self.X = np.reshape(self.X, (self.X.shape[0], 1, self.X.shape[1]))
+        print(self.X.shape)
 
     def prep_data(self):
         self.concatenate_data()
@@ -107,16 +108,23 @@ class MyModel:
         self.Y_test = l[3]
 
     # building and fitting the model
-    # TODO split to build function with parameters and train methods with parameters
-    def build_model(self):
+    def build_model(self, Nodes=50, LSTM_activation='tanh', recurrent_activation='hard_sigmoid',
+                    dense_activation='sigmoid', num_of_layers=1):
         self.model = Sequential()
-        self.model.add(LSTM(50, activation='tanh', input_shape=(1, 4), recurrent_activation='hard_sigmoid'))
-        self.model.add(Dense(1, activation='sigmoid'))
+        for i in range(1, num_of_layers):
+            self.model.add(
+                LSTM(Nodes, activation=LSTM_activation, input_shape=(self.X.shape[1],self.X.shape[2]),
+                     recurrent_activation=recurrent_activation, return_sequences=True))
+        self.model.add(
+            LSTM(Nodes, activation=LSTM_activation, input_shape=(self.X.shape[1],self.X.shape[2]),
+                 recurrent_activation=recurrent_activation))
+        self.model.add(Dense(1, activation=dense_activation))
         self.model.compile(loss='mse', optimizer='adam', metrics=[metrics.mae])
-        self.model.fit(self.X_train, self.Y_train, epochs=30, verbose=2, )
+
+    def train_model(self, epochs=30):
+        self.model.fit(self.X_train, self.Y_train, epochs=epochs, verbose=2, )
 
     # testing the model
-    # TODO split to build the prediction and present (different methods)
     def test_model(self):
         self.Predict = self.model.predict(self.X_test)
         plt.figure(2)
@@ -137,6 +145,7 @@ def main(args=None):
     m.prep_data()
     m.split_train_test()
     m.build_model()
+    m.train_model()
     m.test_model()
 
 
