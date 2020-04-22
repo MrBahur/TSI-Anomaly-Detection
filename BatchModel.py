@@ -87,8 +87,8 @@ class Model:
                     optimizer='adam'):
         self.model = Sequential()
         self.model.add(
-            LSTM(Nodes, activation=LSTM_activation,input_shape=(self.feachers.shape[1], self.feachers.shape[2]), recurrent_activation=recurrent_activation))
-        self.model.add(Dense(1,activation=dense_activation))
+            LSTM(Nodes,input_shape=(self.feachers.shape[1], self.feachers.shape[2])))
+        self.model.add(Dense(1))
         self.model.compile(loss=self.rme, optimizer=optimizer, metrics=['mse', 'mae', 'mape', 'cosine'])
 
     def train_model(self, epochs=30):
