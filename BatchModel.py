@@ -1,5 +1,8 @@
 import os
 import pandas as pd
+import numpy as np
+import csv
+
 from functools import reduce
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
@@ -7,7 +10,6 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras import backend
-
 
 from sklearn import preprocessing
 import argparse
@@ -64,38 +66,46 @@ class Model:
         self.normalized_dataset = pd.DataFrame(x_scaled)
         self.normalized_dataset.columns = self.raw_dataset.columns
 
-    def reshape_data(self, prediction):
+    def reshape_data(self, prediction,ignore = None):
         pred = self.normalized_dataset[prediction].values
         self.prediction = pred.reshape(pred.shape[0], 1)
         self.feacher_names.remove(prediction)
+        if(ignore!=None):
+            self.feacher_names.remove(ignore)
         feachers = self.normalized_dataset[self.feacher_names].values
         self.feachers = feachers.reshape(feachers.shape[0], 1, feachers.shape[1])
 
-    def split_train_test(self, test_size):
-        print(self.feachers.shape)
-        print(self.prediction.shape)
-        l = train_test_split(self.feachers, self.prediction, test_size=test_size, shuffle=False)
-        self.X_train = l[0]
-        self.X_test = l[1]
-        self.Y_train = l[2]
-        self.Y_test = l[3]
+    def split_train_test(self, test_size, validation_size=0.1):
+        relative_val_size = (validation_size / (1 - test_size))  # to make it allways equels to 10% of the data
+        self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(self.feachers, self.prediction,
+                                                                                test_size=test_size, shuffle=False)
+        self.X_train, self.X_val, self.Y_train, self.Y_val = train_test_split(self.X_train, self.Y_train,
+                                                                              test_size=relative_val_size,
+                                                                              shuffle=False)
 
     def rme(self, y_true, y_pred):
         return backend.sqrt(abs(backend.mean(backend.square(y_pred - y_true), axis=-1)))
 
-    def build_model(self, Nodes=50, LSTM_activation='relu', recurrent_activation='sigmoid', dense_activation='tanh',
+    def build_model(self, Nodes=100, LSTM_activation='relu', recurrent_activation='sigmoid', dense_activation='tanh',
                     optimizer='adam'):
         self.model = Sequential()
         self.model.add(
-            LSTM(Nodes,input_shape=(self.feachers.shape[1], self.feachers.shape[2])))
+            LSTM(Nodes, input_shape=(self.feachers.shape[1], self.feachers.shape[2])))
         self.model.add(Dense(1))
-        self.model.compile(loss=self.rme, optimizer=optimizer, metrics=['mse', 'mae', 'mape', 'cosine'])
+        self.model.compile(loss=self.rme, optimizer=optimizer, metrics=['mse', 'mae'])
 
     def train_model(self, epochs=30):
-        self.model.fit(self.X_train, self.Y_train, epochs=epochs, verbose=1)
+        history = self.model.fit(self.X_train, self.Y_train, epochs=epochs, verbose=1,
+                                 validation_data=(self.X_val, self.Y_val))
+        return (history.history)
 
     def test_model(self):
         self.Predict = self.model.predict(self.X_test)
+        score = self.model.evaluate(self.X_test, self.Y_test)
+        names = self.model.metrics_names
+        score_dic = {}
+        for i in range(0, len(names)):
+            score_dic[names[i]] = score[i]
         plt.figure(2)
         plt.scatter(self.Predict, self.Y_test)
         plt.show(block=False)
@@ -105,6 +115,7 @@ class Model:
         Predict, = plt.plot(self.Predict)
         plt.legend([Predict, Test], ["Predicted Data", "Real Data"])
         plt.show()
+        return (score_dic)
 
 
 def run(args):
@@ -114,16 +125,38 @@ def run(args):
     m.normalize_data()
     m.present_data(m.normalized_dataset, 2)
     m.reshape_data(args.prediction)
-    m.split_train_test(0.2)
+    m.split_train_test(args.test_size)
     m.build_model()
     m.train_model()
     m.test_model()
+
+
+def evaluate(args):
+    test_size_arr = np.linspace(0.1, 0.9, 8, endpoint=False)
+    m = Model()
+    m.fetch_data(args.path)
+    m.normalize_data()
+    m.reshape_data(args.prediction,args.ignore)
+    print(args.path)
+    name_of_file = args.path.replace('\\data', '')
+    name_of_file = name_of_file.replace('\\', '-')
+    with open('evaluation/' + name_of_file+'.csv',"w") as csv_file:
+        writer = csv.writer(csv_file, delimiter=',',quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(['test_size','val_loss','val_mse','val_mae','score_loss','score_mse','score_mae'])
+        for test_size in test_size_arr:
+            m.split_train_test(test_size)
+            m.build_model()
+            history = m.train_model()
+            score = m.test_model()
+            writer.writerow([test_size,history['val_loss'][29],history['val_mse'][29],history['val_mae'][29],score['loss'],score['mse'],score['mae']])
+        csv_file.close()
 
 
 if (__name__ == "__main__"):
     parser = argparse.ArgumentParser(description='This is an LSTM model to detect anomalies in data for Taboola')
     parser.add_argument('-path', action='store', dest='path')
     parser.add_argument('-prediction', action='store', dest='prediction')
+    parser.add_argument('-test_size', action='store', dest='test_size', type=float)
+    parser.add_argument('-ignore',action='store',dest='ignore')
     args = parser.parse_args()
-    print(args.path)
-    run(args)
+    evaluate(args)
