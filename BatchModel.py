@@ -9,6 +9,8 @@ from sklearn.model_selection import train_test_split
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
+from keras.layers import Dropout
+from keras.layers import Bidirectional
 from keras import backend
 
 from sklearn import preprocessing
@@ -28,12 +30,12 @@ class Reader:
     def import_data(self):
         dirs = [x[0] for x in os.walk(self.path)]
         dirs.remove(self.path)
-        self.dir_names = [dir.replace(self.path + '\\', '') for dir in dirs]
+        self.dir_names = [dir.replace(self.path + os.path.sep, '') for dir in dirs]
         data_frames = []
         for dir in dirs:
             df = pd.concat(
                 [pd.read_csv(os.path.join(dir, x)) for x in os.listdir(dir) if os.path.isfile(os.path.join(dir, x))])
-            df.columns = ['date', dir.replace(self.path + '\\', '')]
+            df.columns = ['date', dir.replace(self.path + os.path.sep, '')]
             data_frames.append(df)
         # merge
         dataset = reduce(lambda left, right: pd.merge(left, right, on='date'), data_frames)
@@ -66,11 +68,11 @@ class Model:
         self.normalized_dataset = pd.DataFrame(x_scaled)
         self.normalized_dataset.columns = self.raw_dataset.columns
 
-    def reshape_data(self, prediction,ignore = None):
+    def reshape_data(self, prediction, ignore=None):
         pred = self.normalized_dataset[prediction].values
         self.prediction = pred.reshape(pred.shape[0], 1)
         self.feacher_names.remove(prediction)
-        if(ignore!=None):
+        if (ignore != None):
             self.feacher_names.remove(ignore)
         feachers = self.normalized_dataset[self.feacher_names].values
         self.feachers = feachers.reshape(feachers.shape[0], 1, feachers.shape[1])
@@ -89,8 +91,8 @@ class Model:
     def build_model(self, Nodes=100, LSTM_activation='relu', recurrent_activation='sigmoid', dense_activation='tanh',
                     optimizer='adam'):
         self.model = Sequential()
-        self.model.add(
-            LSTM(Nodes, input_shape=(self.feachers.shape[1], self.feachers.shape[2])))
+        self.model.add(Bidirectional(LSTM(Nodes, input_shape=(self.feachers.shape[1], self.feachers.shape[2]))))
+        self.model.add(Dropout(0.5))
         self.model.add(Dense(1))
         self.model.compile(loss=self.rme, optimizer=optimizer, metrics=['mse', 'mae'])
 
@@ -99,7 +101,7 @@ class Model:
                                  validation_data=(self.X_val, self.Y_val))
         return (history.history)
 
-    def test_model(self):
+    def test_model(self, test_size=0.1):
         self.Predict = self.model.predict(self.X_test)
         score = self.model.evaluate(self.X_test, self.Y_test)
         names = self.model.metrics_names
@@ -114,6 +116,7 @@ class Model:
         Test, = plt.plot(self.Y_test)
         Predict, = plt.plot(self.Predict)
         plt.legend([Predict, Test], ["Predicted Data", "Real Data"])
+        plt.title('test size =' + str(test_size))
         plt.show()
         return (score_dic)
 
@@ -136,19 +139,21 @@ def evaluate(args):
     m = Model()
     m.fetch_data(args.path)
     m.normalize_data()
-    m.reshape_data(args.prediction,args.ignore)
+    m.reshape_data(args.prediction, args.ignore)
     print(args.path)
-    name_of_file = args.path.replace('\\data', '')
-    name_of_file = name_of_file.replace('\\', '-')
-    with open('evaluation/' + name_of_file+'.csv',"w") as csv_file:
-        writer = csv.writer(csv_file, delimiter=',',quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(['test_size','val_loss','val_mse','val_mae','score_loss','score_mse','score_mae'])
+    name_of_file = args.path.replace(os.path.sep + 'data', '')
+    name_of_file = name_of_file.replace(os.path.sep, '-')
+    with open('evaluation/' + name_of_file + '.csv', "w") as csv_file:
+        writer = csv.writer(csv_file, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(['test_size', 'val_loss', 'val_mse', 'val_mae', 'score_loss', 'score_mse', 'score_mae'])
         for test_size in test_size_arr:
             m.split_train_test(test_size)
             m.build_model()
             history = m.train_model()
-            score = m.test_model()
-            writer.writerow([test_size,history['val_loss'][29],history['val_mse'][29],history['val_mae'][29],score['loss'],score['mse'],score['mae']])
+            score = m.test_model(test_size)
+            writer.writerow(
+                [test_size, history['val_loss'][29], history['val_mse'][29], history['val_mae'][29], score['loss'],
+                 score['mse'], score['mae']])
         csv_file.close()
 
 
@@ -157,6 +162,6 @@ if (__name__ == "__main__"):
     parser.add_argument('-path', action='store', dest='path')
     parser.add_argument('-prediction', action='store', dest='prediction')
     parser.add_argument('-test_size', action='store', dest='test_size', type=float)
-    parser.add_argument('-ignore',action='store',dest='ignore')
+    parser.add_argument('-ignore', action='store', dest='ignore')
     args = parser.parse_args()
-    evaluate(args)
+    run(args)
