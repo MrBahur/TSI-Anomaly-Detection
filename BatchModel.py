@@ -73,19 +73,15 @@ class Model:
             self.feacher_names.remove(ignore)
         if (data_point_to_predict == 0):
             self.feacher_names.remove(prediction)
-            pred = self.normalized_dataset[prediction].values
-            self.prediction = pred.reshape(pred.shape[0], 1)
-            features = self.normalized_dataset[self.feacher_names].values
-            self.features = features.reshape(features.shape[0], 1, features.shape[1])
-        else:
-            pred = self.normalized_dataset[prediction].copy(deep=True).values
-            print(pred)
-            pred = pred[slice(data_point_to_predict, None)]
-            print(pred)
-            self.prediction = pred.reshape(pred.shape[0], 1)
-            features = self.normalized_dataset[self.feacher_names].values
-            features = features[slice(None, features.shape[0] - data_point_to_predict)]
-            self.features = features.reshape(features.shape[0], 1, features.shape[1])
+
+        pred = self.normalized_dataset[prediction].copy(deep=True).values
+        pred = pred[slice(data_point_to_predict, None)]
+        #pred = pred[slice(None, pred.shape[0]-data_point_to_predict)]
+        self.prediction = pred.reshape(pred.shape[0], 1)
+        features = self.normalized_dataset[self.feacher_names].values
+        features = features[slice(None, features.shape[0] - data_point_to_predict)]
+        #features = features[slice(data_point_to_predict,None)]
+        self.features = features.reshape(features.shape[0], 1, features.shape[1])
 
     def split_train_test(self, test_size, validation_size=0.1):
         relative_val_size = (validation_size / (1 - test_size))  # to make it allways equels to 10% of the data
