@@ -79,10 +79,12 @@ class Model:
             self.features = features.reshape(features.shape[0], 1, features.shape[1])
         else:
             pred = self.normalized_dataset[prediction].copy(deep=True).values
+            print(pred)
             pred = pred[slice(data_point_to_predict, None)]
+            print(pred)
             self.prediction = pred.reshape(pred.shape[0], 1)
             features = self.normalized_dataset[self.feacher_names].values
-            features = features[slice(None, features.shape[0]-data_point_to_predict)]
+            features = features[slice(None, features.shape[0] - data_point_to_predict)]
             self.features = features.reshape(features.shape[0], 1, features.shape[1])
 
     def split_train_test(self, test_size, validation_size=0.1):
@@ -123,8 +125,15 @@ class Model:
         plt.figure(3)
         Test, = plt.plot(self.Y_test)
         Predict, = plt.plot(self.Predict)
-        plt.legend([Predict, Test], ["Predicted Data", "Real Data"])
+        plt.legend([Test, Predict], ["Real Data", "Predicted Data"])
         plt.title('test size =' + str(test_size))
+        plt.show(block=False)
+
+        fig, (ax1, ax2) = plt.subplots(2, sharey=True)
+        ax1.plot(self.Y_test)
+        ax1.set(title="Real Data")
+        ax2.plot(self.Predict)
+        ax2.set(title="Predicted data")
         plt.show()
         return (score_dic)
 
