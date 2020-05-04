@@ -68,18 +68,26 @@ class Model:
         self.normalized_dataset = pd.DataFrame(x_scaled)
         self.normalized_dataset.columns = self.raw_dataset.columns
 
-    def reshape_data(self, prediction, ignore=None):
-        pred = self.normalized_dataset[prediction].values
-        self.prediction = pred.reshape(pred.shape[0], 1)
-        self.feacher_names.remove(prediction)
+    def reshape_data(self, prediction, ignore, data_point_to_predict=0):
         if (ignore != None):
             self.feacher_names.remove(ignore)
-        feachers = self.normalized_dataset[self.feacher_names].values
-        self.feachers = feachers.reshape(feachers.shape[0], 1, feachers.shape[1])
+        if (data_point_to_predict == 0):
+            self.feacher_names.remove(prediction)
+            pred = self.normalized_dataset[prediction].values
+            self.prediction = pred.reshape(pred.shape[0], 1)
+            features = self.normalized_dataset[self.feacher_names].values
+            self.features = features.reshape(features.shape[0], 1, features.shape[1])
+        else:
+            pred = self.normalized_dataset[prediction].copy(deep=True).values
+            pred = pred[slice(data_point_to_predict, None)]
+            self.prediction = pred.reshape(pred.shape[0], 1)
+            features = self.normalized_dataset[self.feacher_names].values
+            features = features[slice(None, features.shape[0]-data_point_to_predict)]
+            self.features = features.reshape(features.shape[0], 1, features.shape[1])
 
     def split_train_test(self, test_size, validation_size=0.1):
         relative_val_size = (validation_size / (1 - test_size))  # to make it allways equels to 10% of the data
-        self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(self.feachers, self.prediction,
+        self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(self.features, self.prediction,
                                                                                 test_size=test_size, shuffle=False)
         self.X_train, self.X_val, self.Y_train, self.Y_val = train_test_split(self.X_train, self.Y_train,
                                                                               test_size=relative_val_size,
@@ -91,8 +99,8 @@ class Model:
     def build_model(self, Nodes=100, LSTM_activation='relu', recurrent_activation='sigmoid', dense_activation='tanh',
                     optimizer='adam'):
         self.model = Sequential()
-        self.model.add(Bidirectional(LSTM(Nodes, input_shape=(self.feachers.shape[1], self.feachers.shape[2]))))
-        self.model.add(Dropout(0.5))
+        self.model.add(Bidirectional(LSTM(Nodes, input_shape=(self.features.shape[1], self.features.shape[2]))))
+        # self.model.add(Dropout(0.5))
         self.model.add(Dense(1))
         self.model.compile(loss=self.rme, optimizer=optimizer, metrics=['mse', 'mae'])
 
@@ -127,7 +135,7 @@ def run(args):
     m.present_data(m.raw_dataset, 1)
     m.normalize_data()
     m.present_data(m.normalized_dataset, 2)
-    m.reshape_data(args.prediction)
+    m.reshape_data(args.prediction, args.ignore, args.data_point_to_predict)
     m.split_train_test(args.test_size)
     m.build_model()
     m.train_model()
@@ -139,7 +147,7 @@ def evaluate(args):
     m = Model()
     m.fetch_data(args.path)
     m.normalize_data()
-    m.reshape_data(args.prediction, args.ignore)
+    m.reshape_data(args.prediction, args.ignore, args.data_point_to_predict)
     print(args.path)
     name_of_file = args.path.replace(os.path.sep + 'data', '')
     name_of_file = name_of_file.replace(os.path.sep, '-')
@@ -162,6 +170,7 @@ if (__name__ == "__main__"):
     parser.add_argument('-path', action='store', dest='path')
     parser.add_argument('-prediction', action='store', dest='prediction')
     parser.add_argument('-test_size', action='store', dest='test_size', type=float)
-    parser.add_argument('-ignore', action='store', dest='ignore')
+    parser.add_argument('-ignore', action='store', dest='ignore', default=None)
+    parser.add_argument('-predict_amount', action='store', dest='data_point_to_predict', type=int, default=0)
     args = parser.parse_args()
     run(args)
