@@ -40,9 +40,12 @@ class Reader:
         # merge
         dataset = reduce(lambda left, right: pd.merge(left, right, on='date'), data_frames)
         dataset.drop_duplicates(subset=None, inplace=True)
+        dates = dataset['date']
+        print(dates.shape)
         dataset.drop('date', 1)
         dataset.drop(dataset.columns[[0]], axis=1, inplace=True)
-        return dataset
+        print(dataset.shape)
+        return dates ,dataset
 
 
 class Model:
@@ -51,8 +54,20 @@ class Model:
 
     def fetch_data(self, path):
         r = Reader(path)
-        self.raw_dataset = r.import_data()
+        self.dates, self.raw_dataset = r.import_data()
         self.feacher_names = r.dir_names
+
+    # def present_data(self, dataset, figure):
+    #     fig, axs = plt.subplots(len(self.feacher_names), 1, sharex=True)
+    #     fig.subplots_adjust(hspace=0.4)
+    #     for i in range(0, len(self.feacher_names)):
+    #         axs[i].plot(self.dates, dataset[self.feacher_names[i]])
+    #         axs[i].title.set_text(self.feacher_names[i])
+    #         for label in axs[i].get_xticklabels():
+    #             label.set_rotation(40)
+    #             label.set_horizontalalignment('right')
+    #     print("can't pass this line")
+    #     plt.show()
 
     def present_data(self, dataset, figure):
         plt.figure(figure)
@@ -60,6 +75,7 @@ class Model:
         names = list(dataset.columns)
         [dataset.plot(kind='line', y=y, ax=ax) for y in names]
         plt.show()
+
 
     def normalize_data(self):
         x = self.raw_dataset.values
