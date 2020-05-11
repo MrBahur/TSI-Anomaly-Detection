@@ -43,11 +43,11 @@ fig, axs = plt.subplots(len(DATA), 1, sharex=True)
 fig.subplots_adjust(hspace=0.4)
 
 for i in range(0, len(DATA)):
-    axs[i].plot(X[i], data[i])
-    axs[i].title.set_text(DATA[i])
-    for label in axs[i].get_xticklabels():
-        label.set_rotation(40)
-        label.set_horizontalalignment('right')
+	axs[i].plot(X[i], data[i])
+	axs[i].title.set_text(DATA[i])
+	for label in axs[i].get_xticklabels():
+		label.set_rotation(40)
+		label.set_horizontalalignment('right')
 
 plt.show()
 
