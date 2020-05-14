@@ -24,7 +24,7 @@ arrays=[[] for i in range(0,len(DATA))]
 Xs = [[] for i in range(0,len(DATA))]
 
 for j in range(1,25):
-	DATE = datetime.datetime(2020, 1, j).strftime("%Y-%m-%d") 
+	DATE = datetime.datetime(2020, 1, j).strftime("%Y-%m-%d")
 	FILE_NAMES = [x + '_' + DATE + '.csv' for x in DATA]
 	data_types = {'ds': str, 'y': float}
 	parse_dates = ['ds']
@@ -50,4 +50,3 @@ for i in range(0, len(DATA)):
 		label.set_horizontalalignment('right')
 
 plt.show()
-
