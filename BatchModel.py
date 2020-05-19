@@ -17,6 +17,14 @@ from keras import backend
 from sklearn import preprocessing
 import argparse
 
+name_to_shortcut = {
+    "recommendation_requests_5m_rate_dc": "rec_5m",
+    "total_failed_action_conversions": "failed",
+    "total_success_action_conversions": "success",
+    "trc_requests_timer_p95_weighted_dc": "p95",
+    "trc_requests_timer_p99_weighted_dc": "p99"
+}
+
 
 class Reader:
     # path is the path to the Main dataset folder
@@ -64,26 +72,39 @@ class Model:
         ax = sns.lineplot(data=dataset)
         plt.show()
 
-    def add_features(self):
+    def add_features(self, data_point_to_predict, prediction):
         self.add_trend()
-        # self.add_is_weekend()
-        # self.add_day_in_week()
+        self.add_multiply(data_point_to_predict, prediction)
+        self.add_is_weekend()
+        self.add_day_in_week()
         self.add_is_rush_hour()
-        self.add_multiply()
+        self.drop_low_corr_feature(prediction)
 
-    def add_multiply(self):
+    def drop_low_corr_feature(self, prediction):
+        corr = self.raw_dataset.corr()[prediction].copy()
+        corr = corr.abs()
+        print(corr)
+        feature_names = self.feacher_names.copy()
+        for name in feature_names:
+            if (corr[name] < 0.2):
+                self.feacher_names.remove(name)
+                self.raw_dataset.drop(columns=[name], inplace=True)
+
+    def add_multiply(self, data_point_to_predict, prediction):
+        if data_point_to_predict == 0:
+            self.feacher_names.remove(prediction)
         feature_names1 = self.feacher_names.copy()
         feature_names2 = self.feacher_names.copy()
-        i = 0
         for feature1 in feature_names1:
-            j = 0
-            i += 1
             for feature2 in feature_names2:
-                j += 1
-                if (feature1 != feature2):
+                if ((feature1 != feature2) and not (feature1.startswith("trend") or feature2.startswith("trend"))
+                        and not (self.feacher_names.__contains__(
+                            name_to_shortcut[feature1] + " * " + name_to_shortcut[feature2])
+                                 or self.feacher_names.__contains__(
+                                    name_to_shortcut[feature2] + " * " + name_to_shortcut[feature1]))):
                     to_add = self.raw_dataset[feature1] * self.raw_dataset[feature2]
-                    self.raw_dataset["feature" + str(i) + " * feature" + str(j)] = to_add
-                    self.feacher_names.append("feature" + str(i) + " * feature" + str(j))
+                    self.raw_dataset[name_to_shortcut[feature1] + " * " + name_to_shortcut[feature2]] = to_add
+                    self.feacher_names.append(name_to_shortcut[feature1] + " * " + name_to_shortcut[feature2])
 
     def add_trend(self):
         feature_names = self.feacher_names.copy()
@@ -93,8 +114,8 @@ class Model:
             x = self.raw_dataset[feature]
             trend = [b - a for a, b in zip(x[::1], x[1::1])]
             trend.append(0)
-            self.raw_dataset["trend" + str(i)] = trend
-            self.feacher_names.append("trend" + str(i))
+            self.raw_dataset["trend " + name_to_shortcut[feature]] = trend
+            self.feacher_names.append("trend " + name_to_shortcut[feature])
 
     def add_is_rush_hour(self):
         requests = self.raw_dataset['recommendation_requests_5m_rate_dc']
@@ -116,6 +137,7 @@ class Model:
         self.feacher_names.append('is_weekend')
 
     def heat_map(self):
+        fig, ax = plt.subplots(figsize=(11, 11))
         sns.heatmap(self.raw_dataset.corr(), cmap='coolwarm')
         plt.savefig('heat_map.png', dpi=300)
         plt.show()
@@ -130,8 +152,6 @@ class Model:
     def reshape_data(self, prediction, ignore, data_point_to_predict=0):
         if (ignore != None):
             self.feacher_names.remove(ignore)
-        if (data_point_to_predict == 0):
-            self.feacher_names.remove(prediction)
 
         pred = self.normalized_dataset[prediction].copy(deep=True).values
         # pred = pred[slice(data_point_to_predict, None)]
@@ -185,6 +205,7 @@ class Model:
         plt.show(block=False)
 
         plt.figure(3)
+        plt.xticks(rotation='vertical')
         Test, = plt.plot(self.dates_features, self.Y_test)
         Predict, = plt.plot(self.dates_prediction, self.Predict)
         plt.legend([Test, Predict], ["Real Data", "Predicted Data"])
@@ -204,9 +225,9 @@ def run(args):
     sns.set()
     m = Model()
     m.fetch_data(args.path)
-    m.add_features()
+    m.present_data(m.raw_dataset, 1)
+    m.add_features(args.data_point_to_predict, args.prediction)
     m.heat_map()
-    # m.present_data(m.raw_dataset, 1)
     m.normalize_data()
     # m.present_data(m.normalized_dataset, 2)
     m.reshape_data(args.prediction, args.ignore, args.data_point_to_predict)
