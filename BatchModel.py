@@ -22,7 +22,8 @@ name_to_shortcut = {
     "total_failed_action_conversions": "failed",
     "total_success_action_conversions": "success",
     "trc_requests_timer_p95_weighted_dc": "p95",
-    "trc_requests_timer_p99_weighted_dc": "p99"
+    "trc_requests_timer_p99_weighted_dc": "p99",
+    "num_of_requests": "requests"
 }
 
 
@@ -83,12 +84,12 @@ class Model:
     def drop_low_corr_feature(self, prediction):
         corr = self.raw_dataset.corr()[prediction].copy()
         corr = corr.abs()
-        print(corr)
-        feature_names = self.feacher_names.copy()
-        for name in feature_names:
-            if (corr[name] < 0.2):
-                self.feacher_names.remove(name)
-                self.raw_dataset.drop(columns=[name], inplace=True)
+        print(corr.sort_values())
+        # feature_names = self.feacher_names.copy()
+        # for name in feature_names:
+        #     if (corr[name] < 0.2):
+        #         self.feacher_names.remove(name)
+        #         self.raw_dataset.drop(columns=[name], inplace=True)
 
     def add_multiply(self, data_point_to_predict, prediction):
         if data_point_to_predict == 0:
@@ -119,10 +120,29 @@ class Model:
 
     def add_is_rush_hour(self):
         requests = self.raw_dataset['recommendation_requests_5m_rate_dc']
-        threshold_value = requests.sort_values()[math.floor(0.8 * requests.size)]
-        is_rush_hour = [1 if num > threshold_value else 0 for num in requests]
-        self.raw_dataset['is_rush_hour'] = is_rush_hour
-        self.feacher_names.append('is_rush_hour')
+        threshold_value_1 = requests.sort_values()[math.floor(0.9 * requests.size)]
+        threshold_value_2 = requests.sort_values()[math.floor(0.8 * requests.size)]
+        threshold_value_3 = requests.sort_values()[math.floor(0.7 * requests.size)]
+        threshold_value_4 = requests.sort_values()[math.floor(0.6 * requests.size)]
+        threshold_value_5 = requests.sort_values()[math.floor(0.5 * requests.size)]
+
+        is_rush_hour1 = [1 if num > threshold_value_1 else 0 for num in requests]
+        is_rush_hour2 = [1 if num > threshold_value_2 else 0 for num in requests]
+        is_rush_hour3 = [1 if num > threshold_value_3 else 0 for num in requests]
+        is_rush_hour4 = [1 if num > threshold_value_4 else 0 for num in requests]
+        is_rush_hour5 = [1 if num > threshold_value_5 else 0 for num in requests]
+
+        self.raw_dataset['is_rush_hour1'] = is_rush_hour1
+        self.raw_dataset['is_rush_hour2'] = is_rush_hour2
+        self.raw_dataset['is_rush_hour3'] = is_rush_hour3
+        self.raw_dataset['is_rush_hour4'] = is_rush_hour4
+        self.raw_dataset['is_rush_hour5'] = is_rush_hour5
+
+        self.feacher_names.append('is_rush_hour1')
+        self.feacher_names.append('is_rush_hour2')
+        self.feacher_names.append('is_rush_hour3')
+        self.feacher_names.append('is_rush_hour4')
+        self.feacher_names.append('is_rush_hour5')
 
     def add_day_in_week(self):
         dates = pd.to_datetime(self.dates, format='%Y-%m-%dT%H:%M:%S')
