@@ -85,11 +85,11 @@ class Model:
         corr = self.raw_dataset.corr()[prediction].copy()
         corr = corr.abs()
         print(corr.sort_values())
-        # feature_names = self.feacher_names.copy()
-        # for name in feature_names:
-        #     if (corr[name] < 0.2):
-        #         self.feacher_names.remove(name)
-        #         self.raw_dataset.drop(columns=[name], inplace=True)
+        feature_names = self.feacher_names.copy()
+        for name in feature_names:
+            if (corr[name] < 0.4):
+                self.feacher_names.remove(name)
+                self.raw_dataset.drop(columns=[name], inplace=True)
 
     def add_multiply(self, data_point_to_predict, prediction):
         if data_point_to_predict == 0:
@@ -224,6 +224,7 @@ class Model:
         plt.scatter(self.Predict, self.Y_test)
         plt.show(block=False)
 
+        plt.subplots(figsize=(11, 11))
         plt.figure(3)
         plt.xticks(rotation='vertical')
         Test, = plt.plot(self.dates_features, self.Y_test)
