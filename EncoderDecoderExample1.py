@@ -4,9 +4,7 @@ from numpy import argmax
 from numpy import array_equal
 from keras.utils import to_categorical
 from keras.models import Model
-from keras.layers import Input
-from keras.layers import LSTM
-from keras.layers import Dense
+from keras.layers import Input,LSTM,Dense
 
 
 # generate a sequence of random integers
