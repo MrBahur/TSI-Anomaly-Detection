@@ -1,5 +1,5 @@
 from BatchModel import Data
-from sklearn.preprocessing import StandardScaler,MinMaxScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import pandas as pd
 import numpy as np
 from keras.models import Sequential
@@ -65,12 +65,16 @@ class AutoEncoder:
         plt.figure(4)
         self.Y_train_pred = self.model.predict(self.X_train)
         self.train_loss = np.mean(np.abs(self.Y_train_pred, self.Y_train), axis=1)
+        self.train_loss_mean = [np.mean(x) for x in self.train_loss.transpose()]
+        self.train_loss_std = [np.std(x) for x in self.train_loss.transpose()]
         sns.distplot(self.train_loss, bins=50)
         plt.show()
 
     def predict(self):
         self.Y_test_pred = self.model.predict(self.X_test)
+        x = np.array(self.Y_test.copy())
         self.test_loss = np.mean(np.abs(self.Y_test_pred, self.Y_test), axis=1)
+        self.Y_test = x
 
     def plot_results(self):
         plt.figure(1)
@@ -98,17 +102,35 @@ class AutoEncoder:
         plt.title("Predicted data")
         plt.show()
 
+    def plot_anomalies(self, num_of_std=1):
+        index = 0
+        for metric in self.data.feacher_names:
+            threshold = self.train_loss_mean[index] + num_of_std * self.train_loss_std[index]
+            is_anomaly = self.test_loss[:, index] > threshold
+            x = []
+            y = []
+            for i in range(0,len(is_anomaly)):
+                if is_anomaly[i]:
+                    x.append(i)
+                    y.append(self.Y_test[i,0,index])
+
+            plt.plot(self.Y_test[:,0,index], label=metric)
+            sns.scatterplot(x,y, label='local anomaly', color=sns.color_palette()[2], s=52)
+            index += 1
+            plt.show()
+
     def run(self):
         sns.set()
         self.split_train_test()
         self.normalize()
         self.split_X_Y()
         self.build_model()
-        self.fit_model(1, 64)
+        self.fit_model(20, 64)
         self.plot_train_loss()
         self.calculate_loss_threshold()
         self.predict()
         self.plot_results()
+        self.plot_anomalies()
 
 
 AC = AutoEncoder()
