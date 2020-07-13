@@ -69,7 +69,7 @@ class Data:
         self.add_multiply(data_point_to_predict, prediction)
         self.add_is_weekend()
         self.add_day_in_week()
-        self.add_is_rush_hour()
+        #self.add_is_rush_hour()
         self.drop_low_corr_feature(prediction)
 
     def add_trend(self):

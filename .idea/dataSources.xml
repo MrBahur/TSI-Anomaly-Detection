@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="database" uuid="8877c183-6daa-4027-b32b-f21bc75d13ea">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:F:\Study\third year b\taboola internship\Taboola-Starship-Internship\for course\database.sqlite</jdbc-url>
+    </data-source>
+    <data-source source="LOCAL" name="database [2]" uuid="e71932ec-71b3-428b-8c32-5b7b4e65e553">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:F:\Study\third year b\taboola internship\Taboola-Starship-Internship\for course\input\database.sqlite</jdbc-url>
+    </data-source>
+  </component>
+</project>

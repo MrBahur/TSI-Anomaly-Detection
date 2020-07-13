@@ -8,12 +8,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 TIME_STEPS = 30
+ALPHA = 0.9
+DATA_POINT_TO_PREDICT = 3
 
 
 class AutoEncoder:
     def __init__(self):
         self.data = Data()
-        self.data.fetch_data(path="data\HK_anomalies_14_4_and_3_5\HK")
+        self.data.fetch_data(path="data\\total_downtime_passover_8_4\\US")
 
     def create_dataset(self, X, y, time_steps=1):
         Xs, ys = [], []
@@ -29,12 +31,21 @@ class AutoEncoder:
         train_size = int(len(df) * (1 - test_size))
         self.train, self.test = df.iloc[0:train_size], df.iloc[train_size:len(df)]
 
-    def split_X_Y(self):
+    def split_X_Y(self, data_point_to_predict=0):
         self.X_train, self.Y_train = self.create_dataset(self.train, self.train, TIME_STEPS)
         self.X_test, self.Y_test = self.create_dataset(self.test, self.test, TIME_STEPS)
+        if (data_point_to_predict > 0):
+            print(self.X_train)
+            self.X_train = self.X_train[slice(None, self.X_train.shape[0] - data_point_to_predict)]
+            print(self.X_train)
+            self.X_test = self.X_test[slice(None, self.X_test.shape[0] - data_point_to_predict)]
+            print(self.Y_train)
+            self.Y_train = self.Y_train[slice(data_point_to_predict, None)]
+            print(self.Y_train)
+            self.Y_test = self.Y_test[slice(data_point_to_predict, None)]
 
     def normalize(self):
-        scaler = StandardScaler().fit(self.train)
+        scaler = MinMaxScaler().fit(self.train)
         self.train = pd.DataFrame(scaler.transform(self.train))
         self.test = pd.DataFrame(scaler.transform(self.test))
 
@@ -102,34 +113,62 @@ class AutoEncoder:
         plt.title("Predicted data")
         plt.show()
 
-    def plot_anomalies(self, num_of_std=1):
+    def plot_anomalies(self, num_of_std=3   , power=4):
+        avg_threshold_pos = np.mean(self.train_loss_mean) + num_of_std * np.mean(self.train_loss_std)
+        loss_mean_vec = self.test_loss.mean(axis=1)
+        loss_mean_vec = pd.DataFrame(loss_mean_vec)
+        mean_exp = loss_mean_vec.ewm(com=ALPHA).mean()
+        threshold_mean_exp = np.mean(abs(loss_mean_vec - mean_exp))[0]
+
+        plt.plot(np.mean(self.test_loss, axis=1), label='loss')
+        # plt.axhline(y=avg_threshold_pos, color='r', linestyle='-', label='high threshold')
+        std = abs(mean_exp - loss_mean_vec).std()
+        # plt.axhline(y=avg_threshold_pos - 2 * num_of_std * np.mean(self.train_loss_std), color='g', linestyle='-',
+        #             label='low threshold')
+        plt.plot(mean_exp + num_of_std * std, '--', label='top exponent mean')
+        plt.plot(mean_exp - num_of_std * std, '--', label='bottom exponent mean')
+        plt.legend()
+        plt.show()
+
+        is_global_anomaly_exp_mean = abs(mean_exp - loss_mean_vec) > threshold_mean_exp + num_of_std * std
+        is_global_anomaly_exp_mean = np.array(is_global_anomaly_exp_mean)
         index = 0
         for metric in self.data.feacher_names:
             threshold = self.train_loss_mean[index] + num_of_std * self.train_loss_std[index]
             is_anomaly = self.test_loss[:, index] > threshold
+            global_anomaly_x = []
+            global_anomaly_y = []
             x = []
             y = []
-            for i in range(0,len(is_anomaly)):
-                if is_anomaly[i]:
+            for i in range(0, len(is_anomaly)):
+                if is_global_anomaly_exp_mean[i]:
+                    global_anomaly_x.append(i)
+                    global_anomaly_y.append(self.Y_test[i, TIME_STEPS-1, index])
+                    pass
+                elif is_anomaly[i]:
                     x.append(i)
-                    y.append(self.Y_test[i,0,index])
+                    y.append(self.Y_test[i, 0, index])
 
-            plt.plot(self.Y_test[:,0,index], label=metric)
-            sns.scatterplot(x,y, label='local anomaly', color=sns.color_palette()[2], s=52)
+            plt.plot(self.Y_test[:, TIME_STEPS-1, index], label=metric)
+            sns.scatterplot(x, y, label='local anomaly', color=sns.color_palette()[2], s=52)
+            sns.scatterplot(global_anomaly_x, global_anomaly_y, label='global anomaly', color=sns.color_palette()[1],
+                            s=52)
             index += 1
             plt.show()
 
     def run(self):
         sns.set()
+        self.data.add_features(data_point_to_predict=DATA_POINT_TO_PREDICT,
+                               prediction='total_success_action_conversions')
         self.split_train_test()
         self.normalize()
-        self.split_X_Y()
+        self.split_X_Y(data_point_to_predict=DATA_POINT_TO_PREDICT)
         self.build_model()
-        self.fit_model(20, 64)
+        self.fit_model(20, 128)
         self.plot_train_loss()
         self.calculate_loss_threshold()
         self.predict()
-        self.plot_results()
+        # self.plot_results()
         self.plot_anomalies()
 
 
