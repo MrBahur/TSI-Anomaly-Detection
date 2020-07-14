@@ -10,7 +10,6 @@ from sklearn.model_selection import train_test_split
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
-from keras.layers import Dropout
 from keras.layers import Bidirectional
 from keras import backend
 
@@ -22,7 +21,8 @@ name_to_shortcut = {
     "total_failed_action_conversions": "failed",
     "total_success_action_conversions": "success",
     "trc_requests_timer_p95_weighted_dc": "p95",
-    "trc_requests_timer_p99_weighted_dc": "p99"
+    "trc_requests_timer_p99_weighted_dc": "p99",
+    "num_of_requests": "requests"
 }
 
 
@@ -55,7 +55,7 @@ class Reader:
         return dates, dataset
 
 
-class Model:
+class Data:
     def __init__(self):
         pass
 
@@ -64,47 +64,13 @@ class Model:
         self.dates, self.raw_dataset = r.import_data()
         self.feacher_names = r.dir_names
 
-    def present_data(self, dataset, figure):
-        plt.figure(figure)
-        ax = plt.gca()
-        dataset['dates'] = pd.to_datetime(self.dates, format='%Y-%m-%dT%H:%M:%S')
-        dataset.set_index('dates', inplace=True)
-        ax = sns.lineplot(data=dataset)
-        plt.show()
-
     def add_features(self, data_point_to_predict, prediction):
         self.add_trend()
         self.add_multiply(data_point_to_predict, prediction)
         self.add_is_weekend()
         self.add_day_in_week()
-        self.add_is_rush_hour()
+        #self.add_is_rush_hour()
         self.drop_low_corr_feature(prediction)
-
-    def drop_low_corr_feature(self, prediction):
-        corr = self.raw_dataset.corr()[prediction].copy()
-        corr = corr.abs()
-        print(corr)
-        feature_names = self.feacher_names.copy()
-        for name in feature_names:
-            if (corr[name] < 0.2):
-                self.feacher_names.remove(name)
-                self.raw_dataset.drop(columns=[name], inplace=True)
-
-    def add_multiply(self, data_point_to_predict, prediction):
-        if data_point_to_predict == 0:
-            self.feacher_names.remove(prediction)
-        feature_names1 = self.feacher_names.copy()
-        feature_names2 = self.feacher_names.copy()
-        for feature1 in feature_names1:
-            for feature2 in feature_names2:
-                if ((feature1 != feature2) and not (feature1.startswith("trend") or feature2.startswith("trend"))
-                        and not (self.feacher_names.__contains__(
-                            name_to_shortcut[feature1] + " * " + name_to_shortcut[feature2])
-                                 or self.feacher_names.__contains__(
-                                    name_to_shortcut[feature2] + " * " + name_to_shortcut[feature1]))):
-                    to_add = self.raw_dataset[feature1] * self.raw_dataset[feature2]
-                    self.raw_dataset[name_to_shortcut[feature1] + " * " + name_to_shortcut[feature2]] = to_add
-                    self.feacher_names.append(name_to_shortcut[feature1] + " * " + name_to_shortcut[feature2])
 
     def add_trend(self):
         feature_names = self.feacher_names.copy()
@@ -119,10 +85,29 @@ class Model:
 
     def add_is_rush_hour(self):
         requests = self.raw_dataset['recommendation_requests_5m_rate_dc']
-        threshold_value = requests.sort_values()[math.floor(0.8 * requests.size)]
-        is_rush_hour = [1 if num > threshold_value else 0 for num in requests]
-        self.raw_dataset['is_rush_hour'] = is_rush_hour
-        self.feacher_names.append('is_rush_hour')
+        threshold_value_1 = requests.sort_values()[math.floor(0.9 * requests.size)]
+        threshold_value_2 = requests.sort_values()[math.floor(0.8 * requests.size)]
+        threshold_value_3 = requests.sort_values()[math.floor(0.7 * requests.size)]
+        threshold_value_4 = requests.sort_values()[math.floor(0.6 * requests.size)]
+        threshold_value_5 = requests.sort_values()[math.floor(0.5 * requests.size)]
+
+        is_rush_hour1 = [1 if num > threshold_value_1 else 0 for num in requests]
+        is_rush_hour2 = [1 if num > threshold_value_2 else 0 for num in requests]
+        is_rush_hour3 = [1 if num > threshold_value_3 else 0 for num in requests]
+        is_rush_hour4 = [1 if num > threshold_value_4 else 0 for num in requests]
+        is_rush_hour5 = [1 if num > threshold_value_5 else 0 for num in requests]
+
+        self.raw_dataset['is_rush_hour1'] = is_rush_hour1
+        self.raw_dataset['is_rush_hour2'] = is_rush_hour2
+        self.raw_dataset['is_rush_hour3'] = is_rush_hour3
+        self.raw_dataset['is_rush_hour4'] = is_rush_hour4
+        self.raw_dataset['is_rush_hour5'] = is_rush_hour5
+
+        self.feacher_names.append('is_rush_hour1')
+        self.feacher_names.append('is_rush_hour2')
+        self.feacher_names.append('is_rush_hour3')
+        self.feacher_names.append('is_rush_hour4')
+        self.feacher_names.append('is_rush_hour5')
 
     def add_day_in_week(self):
         dates = pd.to_datetime(self.dates, format='%Y-%m-%dT%H:%M:%S')
@@ -142,26 +127,66 @@ class Model:
         plt.savefig('heat_map.png', dpi=300)
         plt.show()
 
+    def drop_low_corr_feature(self, prediction):
+        corr = self.raw_dataset.corr()[prediction].copy()
+        corr = corr.abs()
+        print(corr.sort_values())
+        feature_names = self.feacher_names.copy()
+        for name in feature_names:
+            if (corr[name] < 0.4):
+                self.feacher_names.remove(name)
+                self.raw_dataset.drop(columns=[name], inplace=True)
+
+    def add_multiply(self, data_point_to_predict, prediction):
+        if data_point_to_predict == 0:
+            self.feacher_names.remove(prediction)
+        feature_names1 = self.feacher_names.copy()
+        feature_names2 = self.feacher_names.copy()
+        for feature1 in feature_names1:
+            for feature2 in feature_names2:
+                if ((feature1 != feature2) and not (feature1.startswith("trend") or feature2.startswith("trend"))
+                        and not (self.feacher_names.__contains__(
+                            name_to_shortcut[feature1] + " * " + name_to_shortcut[feature2])
+                                 or self.feacher_names.__contains__(
+                                    name_to_shortcut[feature2] + " * " + name_to_shortcut[feature1]))):
+                    to_add = self.raw_dataset[feature1] * self.raw_dataset[feature2]
+                    self.raw_dataset[name_to_shortcut[feature1] + " * " + name_to_shortcut[feature2]] = to_add
+                    self.feacher_names.append(name_to_shortcut[feature1] + " * " + name_to_shortcut[feature2])
+
+
+class Model:
+    def __init__(self):
+        self.data = Data()
+        pass
+
+    def present_data(self, dataset, figure):
+        plt.figure(figure)
+        ax = plt.gca()
+        dataset['dates'] = pd.to_datetime(self.data.dates, format='%Y-%m-%dT%H:%M:%S')
+        dataset.set_index('dates', inplace=True)
+        ax = sns.lineplot(data=dataset)
+        plt.show()
+
     def normalize_data(self):
-        x = self.raw_dataset.values
+        x = self.data.raw_dataset.values
         min_max_scaler = preprocessing.MinMaxScaler()
         x_scaled = min_max_scaler.fit_transform(x)
         self.normalized_dataset = pd.DataFrame(x_scaled)
-        self.normalized_dataset.columns = self.raw_dataset.columns
+        self.normalized_dataset.columns = self.data.raw_dataset.columns
 
     def reshape_data(self, prediction, ignore, data_point_to_predict=0):
         if (ignore != None):
-            self.feacher_names.remove(ignore)
+            self.data.feacher_names.remove(ignore)
 
         pred = self.normalized_dataset[prediction].copy(deep=True).values
         # pred = pred[slice(data_point_to_predict, None)]
         pred = pred[slice(None, pred.shape[0] - data_point_to_predict)]
-        self.dates_prediction = self.dates[slice(None, self.dates.shape[0] - data_point_to_predict)]
+        self.dates_prediction = self.data.dates[slice(None, self.data.dates.shape[0] - data_point_to_predict)]
         self.prediction = pred.reshape(pred.shape[0], 1)
-        features = self.normalized_dataset[self.feacher_names].values
+        features = self.normalized_dataset[self.data.feacher_names].values
         # features = features[slice(None, features.shape[0] - data_point_to_predict)]
         features = features[slice(data_point_to_predict, None)]
-        self.dates_features = self.dates[slice(data_point_to_predict, None)]
+        self.dates_features = self.data.dates[slice(data_point_to_predict, None)]
         self.features = features.reshape(features.shape[0], 1, features.shape[1])
 
     def split_train_test(self, test_size, validation_size=0.1):
@@ -204,6 +229,7 @@ class Model:
         plt.scatter(self.Predict, self.Y_test)
         plt.show(block=False)
 
+        plt.subplots(figsize=(11, 11))
         plt.figure(3)
         plt.xticks(rotation='vertical')
         Test, = plt.plot(self.dates_features, self.Y_test)
@@ -224,10 +250,10 @@ class Model:
 def run(args):
     sns.set()
     m = Model()
-    m.fetch_data(args.path)
-    m.present_data(m.raw_dataset, 1)
-    m.add_features(args.data_point_to_predict, args.prediction)
-    m.heat_map()
+    m.data.fetch_data(args.path)
+    m.present_data(m.data.raw_dataset, 1)
+    m.data.add_features(args.data_point_to_predict, args.prediction)
+    m.data.heat_map()
     m.normalize_data()
     # m.present_data(m.normalized_dataset, 2)
     m.reshape_data(args.prediction, args.ignore, args.data_point_to_predict)
@@ -240,7 +266,7 @@ def run(args):
 def evaluate(args):
     test_size_arr = np.linspace(0.1, 0.9, 8, endpoint=False)
     m = Model()
-    m.fetch_data(args.path)
+    m.data.fetch_data(args.path)
     m.normalize_data()
     m.reshape_data(args.prediction, args.ignore, args.data_point_to_predict)
     name_of_file = args.path.replace(os.path.sep + 'data', '')
