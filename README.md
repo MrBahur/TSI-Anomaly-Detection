@@ -16,3 +16,5 @@ example for parameters:
 ### Unsupervised model:
 We would like to have a model that can predict a data center status based on several metrics given as input.
 You are going to build an unsupervised LSTM autoencoder model that gets several metrics as CSV files, and predicts their behaviour in the future. Then, you will add weights to the predicted metrics, and calculate a data center score for a future period of time.
+
+no parameters required.
