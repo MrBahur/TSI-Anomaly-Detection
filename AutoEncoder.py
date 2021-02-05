@@ -75,7 +75,7 @@ class AutoEncoder:
     def calculate_loss_threshold(self):
         plt.figure(4)
         self.Y_train_pred = self.model.predict(self.X_train)
-        self.train_loss = np.mean(np.abs(self.Y_train_pred, self.Y_train), axis=1)
+        self.train_loss = np.mean(np.abs(self.Y_train_pred - self.Y_train), axis=1)
         self.train_loss_mean = [np.mean(x) for x in self.train_loss.transpose()]
         self.train_loss_std = [np.std(x) for x in self.train_loss.transpose()]
         sns.distplot(self.train_loss, bins=50)
@@ -84,7 +84,7 @@ class AutoEncoder:
     def predict(self):
         self.Y_test_pred = self.model.predict(self.X_test)
         x = np.array(self.Y_test.copy())
-        self.test_loss = np.mean(np.abs(self.Y_test_pred, self.Y_test), axis=1)
+        self.test_loss = np.mean(np.abs(self.Y_test_pred - self.Y_test), axis=1)
         self.Y_test = x
 
     def plot_results(self):
