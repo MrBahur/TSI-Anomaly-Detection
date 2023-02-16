@@ -52,7 +52,7 @@ torchvision==0.4.0+cpu
 tqdm==4.35.0
 uritemplate==3.0.1
 urllib3==1.26.5
-Werkzeug==1.0.0
+Werkzeug==2.2.3
 wrapt==1.12.1
 xlrd >= 1.0.0
 chart_studio >= 1.1.0
